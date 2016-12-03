@@ -7,6 +7,7 @@
 # data downloaded 22 NOV 2016 from 
 # https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/17976
 if(T){
+## 0
 # Under the Hood
       if(T){
 # Preamble
@@ -24,6 +25,7 @@ if(F){
 if(T){
 library(foreign)      # Load Stata, .csv, .tbl
 library(stargazer)    # Nice LaTeX Table Outputs
+library(apsrtable)    # Nice LaTeX Table Outputs
 library(dplyr)        # data management
 library(ggplot2)      # nice graphs and plots
 library(devtools)     #
@@ -39,7 +41,6 @@ library(MASS)         #
 library(XLConnect)    #
 library(xlsx)         # write .xlsx file
 library(plm)          # create time series fixed effects models
-library(apsrtable)    # Nice LaTeX Table Outputs
 library(repmis)       # this is needed to read the .RData file from GitHub
 library(gridExtra)    # this is the package Joel uses for putting two plots together
 library(lmtest)       # this is the package Joel uses for the function he wrote
@@ -55,8 +56,24 @@ source_data("https://github.com/piton3853/2016F_888C_Final-Replication/blob/mast
 #View(rossdata01)
 }
 }
-            }
+# Functions
+  PCSEs <- function (x) {
+          summary(x, vcovBK(x, type = "HC1", cluter = "time"))   # Simmons' function, used to make the standard errors more accurate
+        }
 
+  ggplotRegression <- function (fit) {
+    
+    require(ggplot2)
+    
+    ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+      geom_point() +
+      stat_smooth(method = "lm", col = "blue") +
+      labs(title = paste("Adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                         "Intercept =",signif(fit$coef[[1]],5 ),
+                         " Slope =",signif(fit$coef[[2]], 5),
+                         " P =",signif(summary(fit)$coef[2,4], 5)))
+  }
+      }
 
 ################################################
 ################################################
@@ -64,6 +81,7 @@ source_data("https://github.com/piton3853/2016F_888C_Final-Replication/blob/mast
 
 # Completed Scripts :: Set to 'F' for expedience; set back to 'T' if you want the outputs
       if(F){
+## 1
 # Table 4.1 Female Fraction of the Labor Force, 2002
 if(T){
 df_table_4.1.1 <- rossdata01 %>%
@@ -112,6 +130,7 @@ stargazer(model_4.1.1,model_4.1.2,model_4.1.3, model_4.1.4, model_4.1.5, model_4
           dep.var.caption = "Female Labor Force Participation, 2002")
 }
 
+## 2
 # Table 4.2 Textil and Clothing exports, 2002
 if(T){
   df_table_4.2.1 <- rossdata01 %>%
@@ -140,6 +159,7 @@ if(T){
             )
 }
 
+## 3
 # Table 4.3 Parliamentary Seats, 2002
 if(T){
   df_table_4.3.1 <- rossdata01 %>%
@@ -189,8 +209,8 @@ if(T){
             )
 }
                                                     }
-  
-# Table 4.5
+## 4
+# Table 4.5.1, 4.5.4
 if(T){
   df_table_4.5.1 <- rossdata01 %>%
     dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1) %>%
@@ -202,35 +222,128 @@ if(T){
     filter(!is.na(FDage_1)) %>%
     filter(!is.na(FDoil_gas_valuePOPred_1))
   
-  model_4.5.1a <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) + diff(FDlogGDP_cap2000_supSQ_1) + diff(FDage_1), data = df_table_4.5.1,index=c("cty","year"),model = "within"); summary(model_4.5.1a)
-  model_4.5.1b <- plm(FDlaborfemale ~ FDlogGDP_cap2000_sup_1 + FDlogGDP_cap2000_supSQ_1 + FDage_1, data = df_table_4.5.1,index=c("cty","year"),model = "random"); summary(model_4.5.1b)
-  model_4.5.1c <- lm(FDlaborfemale ~ FDlogGDP_cap2000_sup_1 + FDlogGDP_cap2000_supSQ_1 + FDage_1 + factor(cty) -1, data = df_table_4.5.1); summary(model_4.5.1c)
-  model_4.5.1d <- plm(FDlaborfemale ~ FDlogGDP_cap2000_sup_1 + 
-                        FDlogGDP_cap2000_supSQ_1 + FDage_1 + 
-                        FDoil_gas_valuePOPred_1, 
-                      data = df_table_4.5.1,index=c("cty","year"),model = "within", effect = "individual"); summary(model_4.5.1d)
-  
-  
-  # take the SA idea and generalize it.  I ask, is oil more important than culture generally.  Is oil more important that
-  # beliefs about what women should be doing in general.  SA makes a lot of sense.  Subset the oil countries of SA.  
-  # The SA countries should look different, if Ross idea is true.  This should just tell us if oil has effects.  Motivated
-  # by the broader question.  There will be countries during this data that they had oil booms.  Brazil had an oil boom.
-  # Brazil found a bunch of off shore oil in 2003-2004.  If Ross is right, we can look at only Brazil -- natural experiement.
-  # Is there something unique about Brazil?  Find something similar in Mexico and Venezuela.  Do the broad regional study
-  # of only SA, see if the results hold.  Do one more small analytic case study.  Do women's labor force participation 
-  # move during the booms and busts.
-  # don't go too far down the path of figuring out culture.  Don't spend time doing that.  Look at booms and busts and see
-  # if women are entering and exiting the workforce.  
-  # How to Replicate that result.  Get in the ballpark.  
-  # type of government:
-  # GDP growth vs. GDPPC
-  stargazer(model_4.5.1a,model_4.5.1b,model_4.5.1c,type = 'text',
+  model_4.5.1a <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) + diff(FDlogGDP_cap2000_supSQ_1) + diff(FDage_1), data = df_table_4.5.1,index=c("cty","year"),model = "within"); #summary(model_4.5.1a)
+  m_4.5.1a <- PCSEs(model_4.5.1a); m_4.5.1a
+  apsrtable(model_4.5.1a, se="robust")
+  model_4.5.1b <- plm(FDlaborfemale ~ FDlogGDP_cap2000_sup_1 + FDlogGDP_cap2000_supSQ_1 + FDage_1, data = df_table_4.5.1,index=c("cty","year"),model = "random"); #summary(model_4.5.1b)
+  m_4.5.1b <- PCSEs(model_4.5.1b)
+  model_4.5.1c <- lm(FDlaborfemale ~ FDlogGDP_cap2000_sup_1 + FDlogGDP_cap2000_supSQ_1 + FDage_1 + factor(cty) -1, data = df_table_4.5.1); #summary(model_4.5.1c)
+  m_4.5.1c <- PCSEs(model_4.5.1c)
+  model_4.5.4a <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) + 
+                        diff(FDlogGDP_cap2000_supSQ_1) + diff(FDage_1) + 
+                        diff(FDoil_gas_valuePOPred_1), 
+                      data = df_table_4.5.1,index=c("cty","year"),model = "within", effect = "individual"); #summary(model_4.5.1d)
+  m_4.5.4a <- PCSEs(model_4.5.4a); m_4.5.4a
+  stargazer(model_4.5.1a,model_4.5.4a,type = 'text',
             title = "Female labor force participation, 1960-2002",
             covariate.labels = c("Income (log)","Income (log) squared","Working age"),
             dep.var.caption = "Annual change in female labor force participation",
             dep.var.labels = "controls")
   phtest(model_4.5.1a,model_4.5.1b) # 
 }
+ 
+## 5 
+# Graph Latin America
+  # This is the way forward.
+if(T){
+## 6
+  # Latin America Dataframe
+  if(T){
+    # This is the DF that I wrote during office house.  This DF provides me with the Latin America Data exclusively.
+    df_table_4.5.LA_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(!is.na(cty)) %>%
+      filter(!is.na(year)) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # Brazil Dataframe
+  if(T){
+    df_table_4.5.Brazil <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(!is.na(cty=="Brazil")) %>%
+      filter(!is.na(year)) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    
+  }
+## 7
+  # Simmons' original ggplot of the Brazil Data
+  if(T){
+    brazil_general_plot1 <- ggplot2::ggplot(data = subset(rossdata01, cty == "Brazil"), aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) + 
+      geom_point()
+    
+    brazil_general_plot2 <- ggplot2::ggplot(data = subset(rossdata01, cty == "Brazil"), aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) + 
+      geom_point()
+    
+    gridExtra::grid.arrange(brazil_general_plot1, brazil_general_plot2)
+  }
+## 8
+  # Latin America (discrete) Dataframe from 1985 - 1995
+  if(T){
+    df_table_4.5.LA_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(!is.na(cty)) %>%
+      filter(year>1984 & year<1996) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.LA_discrete)
+    tail(df_table_4.5.LA_discrete)
+  }
+## 9
+  # Brazil (discrete) Dataframe from 1985 - 1995
+  if(T){
+    df_table_4.5.Brazil_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Brazil") %>%
+      filter(year>1984 & year<1996) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Brazil_discrete)
+    tail(df_table_4.5.Brazil_discrete)
+  }
+## 10
+  # Brazil Discrete dates graphic plots
+  if(T){
+  brazil_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Brazil_discrete)
+  brazil_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Brazil_discrete)
+  brazil_discrete_plot_reg1 <- ggplotRegression(brazil_discrete_lm1)
+  brazil_discrete_plot_reg2 <- ggplotRegression(brazil_discrete_lm2)
+  gridExtra::grid.arrange(brazil_discrete_plot_reg1,brazil_discrete_plot_reg2)
+  brazil_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDlaborfemale)) + 
+    geom_line() + 
+    geom_smooth(se = FALSE) +
+    geom_point(); brazil_discrete_plot1
+  
+  brazil_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+    geom_line() + 
+    stat_smooth(method = "lm",se = FALSE) + 
+    geom_point(); brazil_discrete_plot2
+  
+  gridExtra::grid.arrange(brazil_discrete_plot1, brazil_discrete_plot2)
+  }
+ }
+  
 
 # Ross's Stata Code:
 # *Column 1: just the controls
@@ -239,42 +352,8 @@ if(T){
 # *Column 6: drop all Middle East & North Africa
 # xtregar FDlaborfemale FDlogGDP_cap2000_sup_1 FDlogGDP_cap2000_supSQ_1 FDage_1 FDoil_gas_valuePOPred_1 if me_nafr==0, fe
 
-require(lmtest)
-require(sandwich)
-
-PCSEs <- function (x) {
-  summary(x, vcovBK(x, type = "HC1", cluter = "time"))
-}
-
-# This is the DF that I wrote during office house.  This DF provides me with the Latin America Data exclusively.
-# This is the way forward.
-df_table_4.5.9 <- rossdata01 %>%
-  dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-  filter(latin==1) %>%
-  filter(!is.na(cty)) %>%
-  filter(!is.na(year)) %>%
-  filter(!is.na(FDlaborfemale)) %>%
-  filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-  filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-  filter(!is.na(FDage_1)) %>%
-  filter(!is.na(FDoil_gas_valuePOPred_1))
-
-model_4.5.1a <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) + diff(FDlogGDP_cap2000_supSQ_1) + diff(FDage_1), data = df_table_4.5.1,index=c("cty","year"),model = "within"); summary(model_4.5.1a)
-
 # One thing to do is draw a bunch of graphs to see if they are moving the way they should.  Are the trends moving together
 # if oil goes up then labor force participation should diverge.
-
-plot1 <- ggplot2::ggplot(data = subset(rossdata01, cty == "Brazil"), aes(x = year, y = FDlaborfemale)) + 
-  geom_line() + 
-  geom_smooth(se = FALSE) + 
-  geom_point()
-
-plot2 <- ggplot2::ggplot(data = subset(rossdata01, cty == "Brazil"), aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-  geom_line() + 
-  geom_smooth(se = FALSE) + 
-  geom_point()
-
-gridExtra::grid.arrange(plot1, plot2)
 
 # End Bracket to run entire script at one time
 }
