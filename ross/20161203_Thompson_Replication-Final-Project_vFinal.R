@@ -6,10 +6,10 @@
 
 # data downloaded 22 NOV 2016 from 
 # https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/17976
-if(T){
+if(T){ # Entire Script - DO NOT COLLAPSE Normally
 ## 0
 # Under the Hood (start fresh)
-      if(T){
+if(T){
 # Preamble
 if(T){
 rm(list=ls())
@@ -45,13 +45,14 @@ library(repmis)       # this is needed to read the .RData file from GitHub
 library(gridExtra)    # this is the package Joel uses for putting two plots together
 library(lmtest)       # this is the package Joel uses for the function he wrote
 library(sandwich)     # this is the package Joel uses for the function he wrote
+library(mgcv)
   }
 # Load Data
 if(T){
 setwd("~/Documents/GitHubRepo/2016F_888C_Final-Replication/ross")
 #rossdata01 <- read.table(file = "Replication data for The Oil Curse - Ross 2012.tab", header = TRUE, sep = "\t")
 #save(rossdata01, file = "rossdata01.RData")
-source_data("https://github.com/piton3853/2016F_888C_Final-Replication/blob/master/rossdata01.RData?raw=true")
+source_data("https://github.com/piton3853/2016F_888C_Final-Replication/raw/master/ross/rossdata01.RData")
 #write.xlsx(rossdata01, "~/Documents/GitHubRepo/2016F_888C_Final-Replication/ross/Replication data for The Oil Curse - Ross 2012.xlsx")
 #View(rossdata01)
 }
@@ -76,14 +77,11 @@ if(T){
 } # This originates at '# Functions'
       } # This originates at '# Under the Hood'
 
-################################################
-######            Table 4.1 & 4.5         ######
-################################################
-
-# Completed Scripts :: Set to 'F' for expedience; set back to 'T' if you want the outputs
-## 0.5
+##########################################
+###            Table 4.1 & 4.5         ###
+##########################################
 if(F){
-## 1a
+## 4.1a
 # Table 4.1 Female Fraction of the Labor Force, 2002
 if(T){
 df_table_4.1.1 <- rossdata01 %>%
@@ -138,9 +136,9 @@ all_states <- model_4.1.6$coefficients[1]+model_4.1.6$coefficients[2];all_states
 list(low_income,hi_income,menaf,all_others,others,all_states)
 }
   
-## 1b
-  # Table 4.1a (Nick Edit) - Cut "All Others" and replaced with "Latin America" Female Fraction of the Labor Force, 2002
-  if(T){
+## 4.1b
+# Table 4.1a (Nick Edit) - Cut "All Others" and replaced with "Latin America" Female Fraction of the Labor Force, 2002
+if(T){
     df_table_4.1.1b <- rossdata01 %>%
       filter(gdpcap2000_sup < 5000) %>% # By Income:  Low Income
       filter(year == 2002) 
@@ -192,7 +190,7 @@ list(low_income,hi_income,menaf,all_others,others,all_states)
   }
   
 
-## 2
+## 4.2
 # Table 4.2 Textil and Clothing exports, 2002
 if(T){
   df_table_4.2.1 <- rossdata01 %>%
@@ -221,7 +219,7 @@ if(T){
             )
 }
 
-## 3
+## 4.3
 # Table 4.3 Parliamentary Seats, 2002
 if(T){
   df_table_4.3.1 <- rossdata01 %>%
@@ -270,8 +268,8 @@ if(T){
             dep.var.labels = "Likelihood of Female Parlimentary Seat"
             )
 }
-          } # This originates at ## 0.5
-## 4
+
+## 4.4
 # Table 4.5.1, 4.5.4
 if(T){
   df_table_4.5.1 <- rossdata01 %>%
@@ -282,7 +280,8 @@ if(T){
     filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
     filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
     filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))
+    filter(!is.na(FDoil_gas_valuePOPred_1)) %>%
+
   
   model_4.5.1a <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) + diff(FDlogGDP_cap2000_supSQ_1) + diff(FDage_1), data = df_table_4.5.1,index=c("cty","year"),model = "within"); #summary(model_4.5.1a)
   m_4.5.1a <- PCSEs(model_4.5.1a); m_4.5.1a
@@ -295,33 +294,52 @@ if(T){
                         diff(FDoil_gas_valuePOPred_1), 
                       data = df_table_4.5.1,index=c("cty","year"),model = "within", effect = "individual"); #summary(model_4.5.1d)
   m_4.5.4a <- PCSEs(model_4.5.4a); m_4.5.4a
-  
+
   stargazer(model_4.5.1a,model_4.5.4a,type = 'text',
             title = "Female labor force participation, 1960-2002",
             covariate.labels = c("Income (log)","Income (log) squared","Working age","Oil Income"),
             dep.var.caption = "Annual change in female labor force participation",
             dep.var.labels = "controls")
 }  # This originates at: ## 4
- 
-################################################
-######            The Way Forward         ######
-################################################
+} # Collapses Tables 4.1 - 4.5
+
+
+#########################################
+###           The Way Forward         ###
+#########################################
 # Graph Latin America; This is the way forward (##6 - ##10).
 ## 6. Top 6 Latin American oil producers, according to Investopedia 12/03/2016:  
   # http://www.investopedia.com/articles/investing/101315/biggest-oil-producers-latin-america.asp
   # specific data taken from UTDallas.edu on 12/03/2016; https://www.utdallas.edu/~pujana/latin/PDFS/Lecture%2012-%20LAoil.pdf
 
-################################################
-######          General Dataframes        ######
-################################################
-  # 6.00. Latin America Dataframe (General) - Country Specific: Section Header
+# GENERAL LATIN AMERICA
+if(T){
+  df_table_4.5.LA <- rossdata01 %>%
+    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                  FDlogGDP_cap2000_supSQ_1,FDage_1,
+                  FDoil_gas_valuePOPred_1,latin) %>%
+    filter(latin==1) %>%
+    filter(!is.na(cty)) %>%
+    filter(!is.na(year)) %>%
+    filter(!is.na(FDlaborfemale)) %>%
+    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+    filter(!is.na(FDage_1)) %>%
+    filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+
+#############################
+###       Mexico (LT)     ###
+#############################
+if(T){ # Mexico ON / OFF Switch
+# 1. Mexico Dataframe (General) (Pemex, monopoloy)
   if(T){
-    # 0. Latin America Dataframe (General):  This is the DF that I wrote during office house.  This DF provides me with the Latin America Data exclusively.
-    if(T){
-    df_table_4.5.LA <- rossdata01 %>%
-      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      df_table_4.5.Mexico_general <- rossdata01 %>%
+      dplyr::select(cty,year,latin,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                  FDlogGDP_cap2000_supSQ_1,FDage_1,
+                  FDoil_gas_valuePOPred_1) %>%
       filter(latin==1) %>%
-      filter(!is.na(cty)) %>%
+      filter(cty=="Mexico") %>%
       filter(!is.na(year)) %>%
       filter(!is.na(FDlaborfemale)) %>%
       filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
@@ -329,602 +347,260 @@ if(T){
       filter(!is.na(FDage_1)) %>%
       filter(!is.na(FDoil_gas_valuePOPred_1))
   }
-    # 1. Mexico Dataframe (General) (Pemex, monopoloy)
-    if(T){df_table_4.5.Mexico_general <- rossdata01 %>%
-    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+# 2. Mexico Dataframe (Discrete)
+  if(T){
+  # Mexico (discrete) Dataframe from 1985 - 1995
+  #### Look at BOOM:: `72 - `75; `85 - `92; `90 - `00
+  #### Look at BUST:: `75 - `85; `96 - `03
+  # BOOM `72 - `75 (discrete01)
+  if(T){
+    df_table_4.5.Mexico_discrete01 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>=1972 & year<=1975) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # BOOM `85 - `92 (discrete02)
+  if(T){
+    df_table_4.5.Mexico_discrete02 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>=1985 & year<=1992) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # BOOM `92 - `96 (discrete03)
+  if(T){
+    df_table_4.5.Mexico_discrete03 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>=1992 & year<=1996) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # BOOM `75 - `80 (discrete06)
+  if(T){
+    df_table_4.5.Mexico_discrete06 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>=1975 & year<=1980) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # BUST `80 - `85 (discrete04)
+  if(T){
+    df_table_4.5.Mexico_discrete04 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>1980 & year<1986) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+  # BUST `01 - `03 (discrete05)
+  if(T){
+    df_table_4.5.Mexico_discrete05 <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Mexico") %>%
+      filter(year>=2001 & year<=2004) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+}
+# 3. Mexico Visualization
+require(mgcv)
+  # Mexico (General) No coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Mexico_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Mexico General Labor"); Mexico_general_plot1
+      
+      Mexico_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = F) + 
+        geom_point() +
+        ggtitle("Mexico General Oil"); Mexico_general_plot2
+      
+      gridExtra::grid.arrange(Mexico_general_plot1, Mexico_general_plot2)
+    }  # This origiantes at Mexico (General) No coefficients Switch'
+  # Mexico (General) Plot
+  if(T){
+    Mexico_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Mexico General Labor"); Mexico_general_plot1
+    
+    Mexico_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Mexico General Oil"); Mexico_general_plot2
+    
+    gridExtra::grid.arrange(Mexico_general_plot1, Mexico_general_plot2)
+    
+  } # This originates at # Mexico (General) Plot
+  # Mexico (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete01, aes(x = year, y = FDlaborfemale)) + 
+          geom_line() + 
+          geom_smooth(se = FALSE) +
+          geom_point() +
+          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
+        
+        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete01, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+          geom_line() + 
+          stat_smooth(method = "lm",se = FALSE) + 
+          geom_point() +
+          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
+        
+        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
+      }  # This origiantes at # Mexico (Discrete) Plot No Coefficients Switch
+} # Originates at Mexico ON / OFF Switch
+
+##############################
+###       Venezuela (LT)   ###
+##############################
+  if(T){ # Venezuela ON / OFF Switch
+# 1. Venezuela Dataframe (General) (PdVSA nationalized, 1976)
+  if(T){
+      df_table_4.5.Venezuela_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
                   FDlogGDP_cap2000_supSQ_1,FDage_1,
                   FDoil_gas_valuePOPred_1,latin) %>%
-    filter(latin==1) %>%
-    filter(cty=="Mexico") %>%
-    filter(!is.na(year)) %>%
-    filter(!is.na(FDlaborfemale)) %>%
-    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-    filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))}
-    # 2. Venezuela Dataframe (General) (PdVSA nationalized, 1976)
-    if(T){
-    df_table_4.5.Venezuela_general <- rossdata01 %>%
-    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-    filter(cty=="Venezuela, RB") %>%
-    filter(!is.na(year)) %>%
-    filter(!is.na(FDlaborfemale)) %>%
-    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-    filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    # 3. Brazil Dataframe (General) (Petrobras joint)
-    if(T){
-    df_table_4.5.Brazil_general <- rossdata01 %>%
-      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-      filter(cty=="Brazil") %>%
+      filter(cty=="Venezuela, RB") %>%
       filter(!is.na(year)) %>%
       filter(!is.na(FDlaborfemale)) %>%
       filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
       filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
       filter(!is.na(FDage_1)) %>%
       filter(!is.na(FDoil_gas_valuePOPred_1))
-          }
-    # 4. Argentina Dataframe (General) (YPF Privatized-sold)
-    if(T){df_table_4.5.Argentina_general <- rossdata01 %>%
-    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-    filter(cty=="Argentina") %>%
-    filter(!is.na(year)) %>%
-    filter(!is.na(FDlaborfemale)) %>%
-    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-    filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))}
-    # 5. Colombia Dataframe (General) (Ecopetrol monopoly)
-    if(T){
-    df_table_4.5.Colombia_general <- rossdata01 %>%
-    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-    filter(latin==1) %>%
-    filter(cty=="Colombia") %>%
-    filter(!is.na(year)) %>%
-    filter(!is.na(FDlaborfemale)) %>%
-    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-    filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))
-      }
-    # 6. Ecuador Dataframe (General) (PetroEcuador)
-    if(T){df_table_4.5.Ecuador_general <- rossdata01 %>%
-    dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-    filter(latin==1) %>%
-    filter(cty=="Ecuador") %>%
-    filter(!is.na(year)) %>%
-    filter(!is.na(FDlaborfemale)) %>%
-    filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-    filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-    filter(!is.na(FDage_1)) %>%
-    filter(!is.na(FDoil_gas_valuePOPred_1))}
-  } # This originates at '##6.00. Latin America Dataframe (General) - Country Specific: Section Header'
-  
-################################################
-######         Discrete Dataframes        ######
-################################################
-  ## 9 Build Discrete Dataframes for Years and Countries (NEEDS REVIEW)
+}
+# 2. Venezuela (discrete) Dataframe
   if(T){
-    
-    # 1. Mexico (discrete) Dataframe from 1985 - 1995
-    #### Look at BOOM:: `72 - `75; `85 - `92; `90 - `00
-    #### Look at BUST:: `75 - `85; `96 - `03
-    # BOOM `72 - `75 (discrete01)
-    if(T){
-      df_table_4.5.Mexico_discrete01 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>=1972 & year<=1975) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    # BOOM `85 - `92 (discrete02)
-    if(T){
-      df_table_4.5.Mexico_discrete02 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>=1985 & year<=1992) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    # BOOM `92 - `96 (discrete03)
-    if(T){
-      df_table_4.5.Mexico_discrete03 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>=1992 & year<=1996) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    # BOOM `75 - `80 (discrete06)
-    if(T){
-      df_table_4.5.Mexico_discrete06 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>=1975 & year<=1980) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    
-    # BUST `80 - `85 (discrete04)
-    if(T){
-      df_table_4.5.Mexico_discrete04 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>1980 & year<1986) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    # BUST `01 - `03 (discrete05)
-    if(T){
-      df_table_4.5.Mexico_discrete05 <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
-                      FDlogGDP_cap2000_supSQ_1,FDage_1,
-                      FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Mexico") %>%
-        filter(year>=2001 & year<=2004) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-    }
-    
-    # 2. Venezuela (discrete) Dataframe from 1985 - 1995
-    ##### Look at 1970 - 1975 (boom) | 1976 - 1980 (boom) | 1975 - 1979 (bust) | 1980 - 1983 (bust)  #####
-    # BOOM `70 - `75
-    if(T){
-      df_table_4.5.Venezuela_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Venezuela, RB") %>%
-        filter(year>1969 & year<1976) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Venezuela_discrete)
-      tail(df_table_4.5.Venezuela_discrete)
-    }
-    # BOOM `76 - `80
-    if(T){
-      df_table_4.5.Venezuela_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Venezuela, RB") %>%
-        filter(year>1975 & year<1981) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Venezuela_discrete)
-      tail(df_table_4.5.Venezuela_discrete)
-    }
-    # BUST `75 - `79
-    if(T){
-      df_table_4.5.Venezuela_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Venezuela, RB") %>%
-        filter(year>1974 & year<1980) %>% 
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Venezuela_discrete)
-      tail(df_table_4.5.Venezuela_discrete)
-    }
-    
-    # 3. Brazil (discrete) Dataframe from 1985 - 1995
-    ##### Look at 1996 - 2001 (boom) | 1985 - 1990 (bust)  #####
-    # BOOM `96 - `01
-    if(T){
-      df_table_4.5.Brazil_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Brazil") %>%
-        filter(year>1995 & year<2002) %>%
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Brazil_discrete)
-      tail(df_table_4.5.Brazil_discrete)
-    }
-    # BUST `85 - `90
-    if(T){
-      df_table_4.5.Brazil_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Brazil") %>%
-        filter(year>1984 & year<1991) %>%
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Brazil_discrete)
-      tail(df_table_4.5.Brazil_discrete)
-    }
-    
-    
-    # 4. Argentina (discrete) Dataframe from 1985 - 1995
-    ##### NEEDS REVIEW IN THE GENERAL TO SEE WHERE THE BOOMS AND BUSTS ARE #####
-    if(F){
-      df_table_4.5.Argentina_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Argentina") %>%
-        filter(year>1984 & year<1996) %>% # EDIT THESE!
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Argentina_discrete)
-      tail(df_table_4.5.Argentina_discrete)
-    }
-    # 5. Colombia (discrete) Dataframe from 1985 - 1995
-    ##### NEEDS REVIEW IN THE GENERAL TO SEE WHERE THE BOOMS AND BUSTS ARE #####
-    if(F){
-      df_table_4.5.Colombia_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Colombia") %>%
-        filter(year>1984 & year<1996) %>% # EDIT THESE!
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Ecuador_discrete)
-      tail(df_table_4.5.Ecuador_discrete)
-    }
-    # 6. Ecuador (discrete) Dataframe from 1985 - 1995
-    ##### NEEDS REVIEW IN THE GENERAL TO SEE WHERE THE BOOMS AND BUSTS ARE #####
-    if(F){
-      df_table_4.5.Colombia_discrete <- rossdata01 %>%
-        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
-        filter(latin==1) %>%
-        filter(cty=="Colombia") %>%
-        filter(year>1984 & year<1996) %>% # EDIT THESE!
-        filter(!is.na(FDlaborfemale)) %>%
-        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
-        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
-        filter(!is.na(FDage_1)) %>%
-        filter(!is.na(FDoil_gas_valuePOPred_1))
-      head(df_table_4.5.Colombia_discrete)
-      tail(df_table_4.5.Colombia_discrete)
-    }
-    
-  }  # This originates at ## 9
-
-################################################
-######           Graphic Plots            ######
-################################################
-## 10 Graphic Plots
+  # Venezuela (discrete) dataframe from 1970 - 1983
+  ### Look at 
+      # 1970 - 1975 (boom) |
+  # BOOM `70 - `75
   if(T){
-    #############   GENERAL   #############
-    # 10.1.0 Mexico (General)
-    if(T){
-      # 10.1.0.1a Mexico general models 
-      if(F){
-      Mexico_general_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_general)
-      Mexico_general_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_general)
-      Mexico_general_plot_reg1 <- ggplotRegression(Mexico_general_lm1)
-      Mexico_general_plot_reg2 <- ggplotRegression(Mexico_general_lm2)
-      gridExtra::grid.arrange(Mexico_general_plot_reg1,Mexico_general_plot_reg2)
-            } # This originates at '## 10.1.0.1a Mexico general models' - NOT NEEDED
-      
-      # ## 10.1.0.1b Mexico (General) No coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
-      if(T){
-        Mexico_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point(); Mexico_general_plot1
-        
-        Mexico_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico General Oil"); Mexico_general_plot2
-        
-        gridExtra::grid.arrange(Mexico_general_plot1, Mexico_general_plot2)
-      }  # This origiantes at ' # ## 10.1.0.1b Mexico (General) No coefficients Switch'
-      
-    } # This originates at '# 10.1.0 Mexico (General)'
+    df_table_4.5.Venezuela_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Venezuela, RB") %>%
+      filter(year>=1970 & year<=1975) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Venezuela_discrete)
+    tail(df_table_4.5.Venezuela_discrete)
+  }
+      # 1976 - 1980 (boom) |
+  # BOOM `76 - `80
+  if(T){
+    df_table_4.5.Venezuela_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Venezuela, RB") %>%
+      filter(year>=1976 & year=1980) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Venezuela_discrete)
+    tail(df_table_4.5.Venezuela_discrete)
+  }
+      # 1975 - 1979 (bust) |
+  # BUST `75 - `79
+  if(T){
+    df_table_4.5.Venezuela_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Venezuela, RB") %>%
+      filter(year>=1975 & year<=1979) %>% 
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Venezuela_discrete)
+    tail(df_table_4.5.Venezuela_discrete)
+  }
+      # 1980 - 1983 (bust)
+}
+# 3. Venezuela Visualization
+require(mgcv)
+  # Venezuela (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Venezuela_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Venezuela, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Venezuela General Labor"); Venezuela_general_plot1
     
-    #############   DISCRETE    #############
-    # 10.1.1 Mexico (Discrete)
-    if(T){
-      # 10.1.1.1a Mexico discrete models 01 1972 - 1975 (Boom) (discrete01)
-        if(T){
-      Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete01)
-      Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete01)
-      #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-      #                                diff(FDlogGDP_cap2000_supSQ_1) +
-      #                                diff(FDage_1) +
-      #                                diff(FDoil_gas_valuePOPred_1),
-      #                              data = df_table_4.5.Mexico_discrete01,
-      #                              index=c("cty","year"),
-      #                              model = "within", 
-      #                              effect = "individual"); #summary(Mexico_discrete_model3)
-      #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-      Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-      Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-      gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-        } # This originages at: '# 10.1.1.1a Mexico discrete models'
-      # 10.1.1.1b Mexico discrete models No coefficients switch (discrete01)
-        if(T){
-      Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete01, aes(x = year, y = FDlaborfemale)) + 
-        geom_line() + 
-        geom_smooth(se = FALSE) +
-        geom_point() +
-        ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-      
-      Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete01, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-        geom_line() + 
-        stat_smooth(method = "lm",se = FALSE) + 
-        geom_point() +
-        ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-      
-      gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-              }  # This origiantes at ' # 10.1.1.1b Mexico discrete models No coefficients switch'
-      # 10.1.1.2a Mexico discrete models 1985 - 1992 (Boom) (discrete02)
-        if(T){
-        Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete02)
-        Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete02)
-        #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-        #                                diff(FDlogGDP_cap2000_supSQ_1) +
-        #                                diff(FDage_1) +
-        #                                diff(FDoil_gas_valuePOPred_1),
-        #                              data = df_table_4.5.Mexico_discrete01,
-        #                              index=c("cty","year"),
-        #                              model = "within", 
-        #                              effect = "individual"); #summary(Mexico_discrete_model3)
-        #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-        Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-        Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-        gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-      } # This originages at: '# 10.1.1.2a Mexico discrete models'
-      # 10.1.1.2b (discrete02)
-        if(T){
-        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete02, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-        
-        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete02, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-        
-        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-      }  # This origiantes at ' # 10.1.1.2b Mexico discrete models No coefficients switch'
-      # 10.1.1.3a Mexico discrete models 1992 - 1996 (Boom)
-        if(T){
-        Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete03)
-        Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete03)
-        #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-        #                                diff(FDlogGDP_cap2000_supSQ_1) +
-        #                                diff(FDage_1) +
-        #                                diff(FDoil_gas_valuePOPred_1),
-        #                              data = df_table_4.5.Mexico_discrete01,
-        #                              index=c("cty","year"),
-        #                              model = "within", 
-        #                              effect = "individual"); #summary(Mexico_discrete_model3)
-        #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-        Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-        Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-        gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-      } # This originages at: '# 10.1.1.3a Mexico discrete models'
-      # 10.1.1.3b
-        if(T){
-        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete03, 
-                                                 aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-        
-        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete03, 
-                                                 aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-        
-        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-      }  # This origiantes at ' # 10.1.1.3b Mexico discrete models No coefficients switch'
-      # 10.1.1.6a Mexico discrete models 1975 - 1980 (Boom)
-      if(T){
-        Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete06)
-        Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete06)
-        #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-        #                                diff(FDlogGDP_cap2000_supSQ_1) +
-        #                                diff(FDage_1) +
-        #                                diff(FDoil_gas_valuePOPred_1),
-        #                              data = df_table_4.5.Mexico_discrete01,
-        #                              index=c("cty","year"),
-        #                              model = "within", 
-        #                              effect = "individual"); #summary(Mexico_discrete_model3)
-        #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-        Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-        Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-        gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-      } # This originages at: '# 10.1.1.2a Mexico discrete models'
-      # 10.1.1.6b
-      if(T){
-        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete06, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-        
-        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete06, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-        
-        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-      }  # This origiantes at ' # 10.1.1.1b Mexico discrete models No coefficients switch'
-      
-      # 10.1.1.4a Mexico discrete models 1980 - 1985 (Bust)
-        if(T){
-        Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete04)
-        Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete04)
-        #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-        #                                diff(FDlogGDP_cap2000_supSQ_1) +
-        #                                diff(FDage_1) +
-        #                                diff(FDoil_gas_valuePOPred_1),
-        #                              data = df_table_4.5.Mexico_discrete01,
-        #                              index=c("cty","year"),
-        #                              model = "within", 
-        #                              effect = "individual"); #summary(Mexico_discrete_model3)
-        #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-        Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-        Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-        gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-      } # This originages at: '# 10.1.1.4a Mexico discrete models'
-      # 10.1.1.4b
-        if(T){
-        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete04, 
-                                                 aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-        
-        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete04, 
-                                                 aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-        
-        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-      }  # This origiantes at ' # 10.1.1.3b Mexico discrete models No coefficients switch'
-      # 10.1.1.5a Mexico discrete models 2001 - 2003 (Bust)
-        if(T){
-        Mexico_discrete_model1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Mexico_discrete05)
-        Mexico_discrete_model2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Mexico_discrete05)
-        #Mexico_discrete_model3 <- plm(diff(FDlaborfemale) ~ diff(FDlogGDP_cap2000_sup_1) +
-        #                                diff(FDlogGDP_cap2000_supSQ_1) +
-        #                                diff(FDage_1) +
-        #                                diff(FDoil_gas_valuePOPred_1),
-        #                              data = df_table_4.5.Mexico_discrete01,
-        #                              index=c("cty","year"),
-        #                              model = "within", 
-        #                              effect = "individual"); #summary(Mexico_discrete_model3)
-        #Mexico_discrete_m3 <- PCSEs(Mexico_discrete_model3); Mexico_discrete_m3
-        Mexico_discrete_plot_reg1 <- ggplotRegression(Mexico_discrete_model1); Mexico_discrete_plot_reg1
-        Mexico_discrete_plot_reg2 <- ggplotRegression(Mexico_discrete_model2); Mexico_discrete_plot_reg2
-        gridExtra::grid.arrange(Mexico_discrete_plot_reg1,Mexico_discrete_plot_reg2)
-      } # This originages at: '# 10.1.1.4a Mexico discrete models'
-      # 10.1.1.5b
-        if(T){
-        Mexico_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete05, 
-                                                 aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Mexico Discrete Labor"); Mexico_discrete_plot1
-        
-        Mexico_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Mexico_discrete05, 
-                                                 aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Mexico Discrete Oil"); Mexico_discrete_plot2
-        
-        gridExtra::grid.arrange(Mexico_discrete_plot1, Mexico_discrete_plot2)
-      }  # This origiantes at ' # 10.1.1.3b Mexico discrete models No coefficients switch'
-
-      
-      
-       
-    } # This originates at '## 10.1.1 Mexico (Discrete)'
+    Venezuela_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Venezuela, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = FALSE) + 
+      geom_point() +
+      ggtitle("Venezuela General Oil"); Venezuela_general_plot2
     
-    # 10.2.0 Venezuela (General)
-    if(T){
-      # 10.2.0.1a Venezuela (General) models 
-      if(F){
-        Venezuela_general_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Venezuela_general)
-        Venezuela_general_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Venezuela_general)
-        Venezuela_general_plot_reg1 <- ggplotRegression(Venezuela_general_lm1)
-        Venezuela_general_plot_reg2 <- ggplotRegression(Venezuela_general_lm2)
-        gridExtra::grid.arrange(Venezuela_general_plot_reg1,Venezuela_general_plot_reg2)
-      } # This originates at '## 10.2.0.1a Venezuela general models'
-      
-      # ## 10.2.0.1b Venezuela (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
-      if(T){
-        Venezuela_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Venezuela, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point() +
-          ggtitle("Venezuela General Labor"); Venezuela_general_plot1
-        
-        Venezuela_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Venezuela, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Venezuela General Oil"); Venezuela_general_plot2
-        
-        gridExtra::grid.arrange(Venezuela_general_plot1, Venezuela_general_plot2)
-      }  # This origiantes at '# ## 10.2.0.1b Venezuela no coefficients Switch'
-      
-    } # This originates at '## 10.2.0 Venezuela (General)'
+    gridExtra::grid.arrange(Venezuela_general_plot1, Venezuela_general_plot2)}
+  # Venezuela (General) Plot
+  if(T){
+    Venezuela_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Venezuela_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Venezuela General Labor"); Venezuela_general_plot1
     
-    # 10.2.1 Venezuela (Discrete)
-    if(T){
-      # 10.2.1.1a Venezuela discrete models
-      if(T){
-      Venezuela_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Venezuela_discrete)
-      Venezuela_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Venezuela_discrete)
-      Venezuela_discrete_plot_reg1 <- ggplotRegression(Venezuela_discrete_lm1)
-      Venezuela_discrete_plot_reg2 <- ggplotRegression(Venezuela_discrete_lm2)
-      gridExtra::grid.arrange(Venezuela_discrete_plot_reg1,Venezuela_discrete_plot_reg2)
-      } # This originates at: '# 10.2.1.1a Venezuela discrete models'
-      
-      # 10.2.1.1b Venezuela discrete models No Coefficients switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
-      if(T){
+    Venezuela_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Venezuela_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Venezuela General Oil"); Venezuela_general_plot2
+    
+    gridExtra::grid.arrange(Venezuela_general_plot1, Venezuela_general_plot2)
+    
+  } # This originates at # 3. Venezuela (General) Plot
+  # Venezuela (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
       Venezuela_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Venezuela_discrete, aes(x = year, y = FDlaborfemale)) + 
         geom_line() + 
         geom_smooth(se = FALSE) +
@@ -938,128 +614,850 @@ if(T){
         ggtitle("Venezuela Discrete Oil"); Venezuela_discrete_plot2
       
       gridExtra::grid.arrange(Venezuela_discrete_plot1, Venezuela_discrete_plot2)
-      } # This originates at: '# 10.2.1.1b Venezuela discrete models No Coefficients switch'
+    } # This originates at # Venezuela (Discrete) Plot No Coefficients switch
+} # Originates at Venezuela ON / OFF Switch
+
+###########################
+###       Brazil        ###
+###########################
+if(T){ # Brazil ON / OFF Switch
+# 1. Brazil Dataframe (General) (Petrobras joint)
+  if(T){
+      df_table_4.5.Brazil_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+        filter(cty=="Brazil") %>%
+        filter(!is.na(year)) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      }
+# 2. Brazil (discrete) Dataframe
+  if(T){
+  # Brazil (discrete) Dataframe from 1985 - 1995
+  # Look at 
+  # BUST `85 - `90 |
+  if(T){
+    df_table_4.5.Brazil_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Brazil") %>%
+      filter(year>=1985 & year<=1990) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Brazil_discrete)
+    tail(df_table_4.5.Brazil_discrete)
+  }
+  # BOOM `96 - `01
+  if(T){
+    df_table_4.5.Brazil_discrete <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+      filter(latin==1) %>%
+      filter(cty=="Brazil") %>%
+      filter(year>=1996 & year<=2001) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+    head(df_table_4.5.Brazil_discrete)
+    tail(df_table_4.5.Brazil_discrete)
+  }
+}
+# 3. Brazil Visualization
+require(mgcv)
+  # Brazil (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Brazil_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Brazil General Labor"); Brazil_general_plot1
+    
+    Brazil_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = FALSE) + 
+      geom_point() +
+      ggtitle("Brazil General Oil"); Brazil_general_plot2
+    
+    gridExtra::grid.arrange(Brazil_general_plot1, Brazil_general_plot2)}
+  # Brazil (General) Plot
+  if(T){
+    Brazil_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Brazil General Labor"); Brazil_general_plot1
+    
+    Brazil_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Brazil General Oil"); Brazil_general_plot2
+    
+    gridExtra::grid.arrange(Brazil_general_plot1, Brazil_general_plot2)
+    
+  } # This originates at # 3. Brazil (General) Plot
+  # Brazil (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Brazil_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Brazil Discrete Labor"); Brazil_discrete_plot1
+    
+    Brazil_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(method = "lm",se = FALSE) + 
+      geom_point() +
+      ggtitle("Brazil Discrete Oil"); Brazil_discrete_plot2
+    
+    gridExtra::grid.arrange(Brazil_discrete_plot1, Brazil_discrete_plot2)
+  } # This originates at # Brazil (Discrete) Plot No Coefficients switch
+} # Originates at Brazil ON / OFF Switch
+  
+##############################
+###     Argentina (LT)     ###
+##############################
+if(T){ # Argentina ON / OFF Switch
+# 1. Argentina Dataframe (General) (Petrobras joint)
+  if(T){
+    df_table_4.5.Argentina_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Argentina") %>%
+      filter(!is.na(year)) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+# 2. Argentina (discrete) Dataframe
+  if(T){
+    # Argentina (discrete) Dataframe from 1985 - 1995
+    # Look at 
+    # BUST `85 - `90 |
+    if(T){
+      df_table_4.5.Argentina_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Argentina") %>%
+        filter(year>=1985 & year<=1990) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Argentina_discrete)
+      tail(df_table_4.5.Argentina_discrete)
     }
-    
-    # 10.3.0 Brazil (General)
+    # BOOM `96 - `01
     if(T){
-      # 10.3.0.1a Brazil (General) models 
-      if(F){
-        Brazil_general_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Brazil)
-        Brazil_general_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Brazil)
-        Brazil_general_plot_reg1 <- ggplotRegression(Brazil_general_lm1)
-        Brazil_general_plot_reg2 <- ggplotRegression(Brazil_general_lm2)
-        gridExtra::grid.arrange(Brazil_general_plot_reg1,Brazil_general_plot_reg2)
-      } # This originates at '## 10.2.0.1a Brazil general models'
-      
-      # ## 10.3.0.1b Brazil (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
-      if(T){
-        Brazil_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point(); Brazil_general_plot1
-        
-        Brazil_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point() +
-          ggtitle("Brazil General Oil"); Brazil_general_plot2
-        
-        gridExtra::grid.arrange(Brazil_general_plot1, Brazil_general_plot2)
-      }  # This origiantes at '# ## 10.2.0.1b Brazil no coefficients Switch'
-      
-    } # This originates at '## 10.2.0 Brazil (General)'
-    
-    # 10.3.1 Brazil (Discrete)
-    if(T){
-      # 10.2.1.1a Brazil discrete models
-      if(T){
-        Brazil_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Brazil_discrete)
-        Brazil_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Brazil_discrete)
-        Brazil_discrete_plot_reg1 <- ggplotRegression(Brazil_discrete_lm1)
-        Brazil_discrete_plot_reg2 <- ggplotRegression(Brazil_discrete_lm2)
-        gridExtra::grid.arrange(Brazil_discrete_plot_reg1,Brazil_discrete_plot_reg2)
-      } # This originates at: '# 10.2.1.1a Brazil discrete models'
-      # 10.2.1.1b Brazil discrete models No Coefficients switch
-      if(T){
-        Brazil_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDlaborfemale)) + 
-          geom_line() + 
-          geom_smooth(se = FALSE) +
-          geom_point(); Brazil_discrete_plot1
-        
-        Brazil_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Brazil_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
-          geom_line() + 
-          stat_smooth(method = "lm",se = FALSE) + 
-          geom_point(); Brazil_discrete_plot2
-        
-        gridExtra::grid.arrange(Brazil_discrete_plot1, Brazil_discrete_plot2)
-      } # This originates at: '# 10.2.1.1b Brazil discrete models No Coefficients switch'
+      df_table_4.5.Argentina_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Argentina") %>%
+        filter(year>=1996 & year<=2001) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Argentina_discrete)
+      tail(df_table_4.5.Argentina_discrete)
     }
+  }
+# 3. Argentina Visualization
+require(mgcv)
+  # Argentina (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Argentina_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Argentina, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Argentina General Labor"); Argentina_general_plot1
     
+    Argentina_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Argentina, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = FALSE) + 
+      geom_point() +
+      ggtitle("Argentina General Oil"); Argentina_general_plot2
     
-  # 4. Argentina
+    gridExtra::grid.arrange(Argentina_general_plot1, Argentina_general_plot2)}
+  # Argentina (General) Plot
+  if(T){
+    Argentina_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Argentina_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Argentina General Labor"); Argentina_general_plot1
+    
+    Argentina_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Argentina_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Argentina General Oil"); Argentina_general_plot2
+    
+    gridExtra::grid.arrange(Argentina_general_plot1, Argentina_general_plot2)
+    
+  } # This originates at # 3. Argentina (General) Plot
+  # Argentina (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Argentina_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Argentina_discrete, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Argentina Discrete Labor"); Argentina_discrete_plot1
+    
+    Argentina_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Argentina_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(method = "lm",se = FALSE) + 
+      geom_point() +
+      ggtitle("Argentina Discrete Oil"); Argentina_discrete_plot2
+    
+    gridExtra::grid.arrange(Argentina_discrete_plot1, Argentina_discrete_plot2)
+  } # This originates at # Argentina (Discrete) Plot No Coefficients switch  
+} # Originates at Argentina ON / OFF Switch
+  
+#############################
+###       Colombia        ###
+#############################
+if(T){ # Colombia ON / OFF Switch
+# 1. Colombia Dataframe (General) (Petrobras joint)
+  if(T){
+    df_table_4.5.Colombia_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Colombia") %>%
+      filter(!is.na(year)) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+# 2. Colombia (discrete) Dataframe
+  if(T){
+    # Colombia (discrete) Dataframe from 1985 - 1995
+    # Look at 
+    # BUST `85 - `90 |
     if(T){
-      Argentina_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Argentina_discrete)
-      Argentina_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Argentina_discrete)
-      Argentina_discrete_plot_reg1 <- ggplotRegression(Argentina_discrete_lm1)
-      Argentina_discrete_plot_reg2 <- ggplotRegression(Argentina_discrete_lm2)
-      gridExtra::grid.arrange(Argentina_discrete_plot_reg1,Argentina_discrete_plot_reg2)
-      # ## 10.4. Argentina No coefficients Switch
-      if(F){
-      Argentina_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Argentina_discrete, aes(x = year, y = FDlaborfemale)) + 
+      df_table_4.5.Colombia_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Colombia") %>%
+        filter(year>=1985 & year<=1990) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Colombia_discrete)
+      tail(df_table_4.5.Colombia_discrete)
+    }
+    # BOOM `96 - `01
+    if(T){
+      df_table_4.5.Colombia_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Colombia") %>%
+        filter(year>=1996 & year<=2001) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Colombia_discrete)
+      tail(df_table_4.5.Colombia_discrete)
+    }
+  }
+# 3. Colombia Visualization
+require(mgcv)
+  # Colombia (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Colombia_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Colombia, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Colombia General Labor"); Colombia_general_plot1
+    
+    Colombia_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Colombia, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = FALSE) + 
+      geom_point() +
+      ggtitle("Colombia General Oil"); Colombia_general_plot2
+    
+    gridExtra::grid.arrange(Colombia_general_plot1, Colombia_general_plot2)}
+  # Colombia (General) Plot
+  if(T){
+    Colombia_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Colombia_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Colombia General Labor"); Colombia_general_plot1
+    
+    Colombia_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Colombia_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Colombia General Oil"); Colombia_general_plot2
+    
+    gridExtra::grid.arrange(Colombia_general_plot1, Colombia_general_plot2)
+    
+  } # This originates at # 3. Colombia (General) Plot
+  # Colombia (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Colombia_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Colombia_discrete, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Colombia Discrete Labor"); Colombia_discrete_plot1
+    
+    Colombia_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Colombia_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(method = "lm",se = FALSE) + 
+      geom_point() +
+      ggtitle("Colombia Discrete Oil"); Colombia_discrete_plot2
+    
+    gridExtra::grid.arrange(Colombia_discrete_plot1, Colombia_discrete_plot2)
+  } # This originates at # Colombia (Discrete) Plot No Coefficients switch
+} # Originates at Colombia ON / OFF Switch
+  
+############################
+###     Ecuador (LT)     ###
+############################
+if(T){ # Ecuador ON / OFF Switch
+# 1. Ecuador Dataframe (General) (Petrobras joint)
+  if(T){
+    df_table_4.5.Ecuador_general <- rossdata01 %>%
+      dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                    FDlogGDP_cap2000_supSQ_1,FDage_1,
+                    FDoil_gas_valuePOPred_1,latin) %>%
+      filter(cty=="Ecuador") %>%
+      filter(!is.na(year)) %>%
+      filter(!is.na(FDlaborfemale)) %>%
+      filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+      filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+      filter(!is.na(FDage_1)) %>%
+      filter(!is.na(FDoil_gas_valuePOPred_1))
+  }
+# 2. Ecuador (discrete) Dataframe
+  if(T){
+    # Ecuador (discrete) Dataframe from 1985 - 1995
+    # Look at 
+    # BUST `85 - `90 |
+    if(T){
+      df_table_4.5.Ecuador_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Ecuador") %>%
+        filter(year>=1985 & year<=1990) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Ecuador_discrete)
+      tail(df_table_4.5.Ecuador_discrete)
+    }
+    # BOOM `96 - `01
+    if(T){
+      df_table_4.5.Ecuador_discrete <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+        filter(latin==1) %>%
+        filter(cty=="Ecuador") %>%
+        filter(year>=1996 & year<=2001) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+      head(df_table_4.5.Ecuador_discrete)
+      tail(df_table_4.5.Ecuador_discrete)
+    }
+  }
+# 3. Ecuador Visualization
+require(mgcv)
+  # Ecuador (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Ecuador_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Ecuador, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Ecuador General Labor"); Ecuador_general_plot1
+    
+    Ecuador_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Ecuador, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = FALSE) + 
+      geom_point() +
+      ggtitle("Ecuador General Oil"); Ecuador_general_plot2
+    
+    gridExtra::grid.arrange(Ecuador_general_plot1, Ecuador_general_plot2)}
+  # Ecuador (General) Plot
+  if(T){
+    Ecuador_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_general, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Ecuador General Labor"); Ecuador_general_plot1
+    
+    Ecuador_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+      geom_point() +
+      ggtitle("Ecuador General Oil"); Ecuador_general_plot2
+    
+    gridExtra::grid.arrange(Ecuador_general_plot1, Ecuador_general_plot2)
+    
+  } # This originates at # 3. Ecuador (General) Plot
+  # Ecuador (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+    Ecuador_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_discrete, aes(x = year, y = FDlaborfemale)) + 
+      geom_line() + 
+      geom_smooth(se = FALSE) +
+      geom_point() +
+      ggtitle("Ecuador Discrete Labor"); Ecuador_discrete_plot1
+    
+    Ecuador_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      geom_line() + 
+      stat_smooth(method = "lm",se = FALSE) + 
+      geom_point() +
+      ggtitle("Ecuador Discrete Oil"); Ecuador_discrete_plot2
+    
+    gridExtra::grid.arrange(Ecuador_discrete_plot1, Ecuador_discrete_plot2)
+  } # This originates at # Ecuador (Discrete) Plot No Coefficients switch
+} # Originates at Ecuador ON / OFF Switch
+  
+############################
+###       Suriname      ###
+############################
+if(T){ # Suriname ON / OFF Switch
+# 1. Suriname Dataframe (General) (Petrobras joint)
+  if(T){
+      df_table_4.5.Suriname_general <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                      FDlogGDP_cap2000_supSQ_1,FDage_1,
+                      FDoil_gas_valuePOPred_1,latin) %>%
+        filter(cty=="Suriname") %>%
+        filter(!is.na(year)) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+    }
+# 2. Suriname (discrete) Dataframe
+  if(T){
+      # Suriname (discrete) Dataframe from 1985 - 1995
+      # Look at 
+      # BUST `85 - `90 |
+      if(T){
+        df_table_4.5.Suriname_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Suriname") %>%
+          filter(year>=1985 & year<=1990) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Suriname_discrete)
+        tail(df_table_4.5.Suriname_discrete)
+      }
+      # BOOM `96 - `01
+      if(T){
+        df_table_4.5.Suriname_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Suriname") %>%
+          filter(year>=1996 & year<=2001) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Suriname_discrete)
+        tail(df_table_4.5.Suriname_discrete)
+      }
+    }
+# 3. Suriname Visualization
+require(mgcv)
+  # Suriname (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Suriname_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Suriname, aes(x = year, y = FDlaborfemale)) + 
         geom_line() + 
         geom_smooth(se = FALSE) +
-        geom_point(); Argentina_discrete_plot1
+        geom_point() +
+        ggtitle("Suriname General Labor"); Suriname_general_plot1
       
-      Argentina_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Argentina_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      Suriname_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Suriname, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
         geom_line() + 
-        stat_smooth(method = "lm",se = FALSE) + 
-        geom_point(); Argentina_discrete_plot2
+        stat_smooth(se = FALSE) + 
+        geom_point() +
+        ggtitle("Suriname General Oil"); Suriname_general_plot2
       
-      gridExtra::grid.arrange(Argentina_discrete_plot1, Argentina_discrete_plot2)
-            } # This originates at '# ## 10.4. Argentina No coefficients Switch'
-    }
-  # 5. Colombia
-    if(T){
-      Colombia_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Colombia_discrete)
-      Colombia_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Colombia_discrete)
-      Colombia_discrete_plot_reg1 <- ggplotRegression(Colombia_discrete_lm1)
-      Colombia_discrete_plot_reg2 <- ggplotRegression(Colombia_discrete_lm2)
-      gridExtra::grid.arrange(Colombia_discrete_plot_reg1,Colombia_discrete_plot_reg2)
-      Colombia_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Colombia_discrete, aes(x = year, y = FDlaborfemale)) + 
+      gridExtra::grid.arrange(Suriname_general_plot1, Suriname_general_plot2)}
+  # Suriname (General) Plot
+  if(T){
+      Suriname_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Suriname_general, aes(x = year, y = FDlaborfemale)) + 
         geom_line() + 
         geom_smooth(se = FALSE) +
-        geom_point(); Colombia_discrete_plot1
+        geom_point() +
+        ggtitle("Suriname General Labor"); Suriname_general_plot1
       
-      Colombia_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Colombia_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      Suriname_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Suriname_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
         geom_line() + 
-        stat_smooth(method = "lm",se = FALSE) + 
-        geom_point(); Colombia_discrete_plot2
+        stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+        geom_point() +
+        ggtitle("Suriname General Oil"); Suriname_general_plot2
       
-      gridExtra::grid.arrange(Colombia_discrete_plot1, Colombia_discrete_plot2)
-    }
-  # 6. Ecuador
-    if(T){
-      Ecuador_discrete_lm1 <- lm(FDlaborfemale ~ year, data = df_table_4.5.Ecuador_discrete)
-      Ecuador_discrete_lm2 <- lm(FDoil_gas_valuePOPred_1 ~ year, data = df_table_4.5.Ecuador_discrete)
-      Ecuador_discrete_plot_reg1 <- ggplotRegression(Ecuador_discrete_lm1)
-      Ecuador_discrete_plot_reg2 <- ggplotRegression(Ecuador_discrete_lm2)
-      gridExtra::grid.arrange(Ecuador_discrete_plot_reg1,Ecuador_discrete_plot_reg2)
-      Ecuador_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_discrete, aes(x = year, y = FDlaborfemale)) + 
+      gridExtra::grid.arrange(Suriname_general_plot1, Suriname_general_plot2)
+      
+    } # This originates at # 3. Suriname (General) Plot
+  # Suriname (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Suriname_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Suriname_discrete, aes(x = year, y = FDlaborfemale)) + 
         geom_line() + 
         geom_smooth(se = FALSE) +
-        geom_point(); Ecuador_discrete_plot1
+        geom_point() +
+        ggtitle("Suriname Discrete Labor"); Suriname_discrete_plot1
       
-      Ecuador_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Ecuador_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+      Suriname_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Suriname_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
         geom_line() + 
         stat_smooth(method = "lm",se = FALSE) + 
         geom_point() +
-        ggtitle("Ecuador Discrete Oil"); Ecuador_discrete_plot2
+        ggtitle("Suriname Discrete Oil"); Suriname_discrete_plot2
       
-      gridExtra::grid.arrange(Ecuador_discrete_plot1, Ecuador_discrete_plot2)
+      gridExtra::grid.arrange(Suriname_discrete_plot1, Suriname_discrete_plot2)
+    } # This originates at # Suriname (Discrete) Plot No Coefficients switch
+  } # Originates at Suriname ON / OFF Switch
+
+##########################
+###       Bolivia      ###
+##########################
+if(T){ # Bolivia ON / OFF Switch
+# 1. Bolivia Dataframe (General) (Petrobras joint)
+  if(T){
+      df_table_4.5.Bolivia_general <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                      FDlogGDP_cap2000_supSQ_1,FDage_1,
+                      FDoil_gas_valuePOPred_1,latin) %>%
+        filter(cty=="Bolivia") %>%
+        filter(!is.na(year)) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
     }
-  } # This originates at: ## 10
+# 2. Bolivia (discrete) Dataframe
+  if(T){
+      # Bolivia (discrete) Dataframe from 1985 - 1995
+      # Look at 
+      # BUST `85 - `90 |
+      if(T){
+        df_table_4.5.Bolivia_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Bolivia") %>%
+          filter(year>=1985 & year<=1990) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Bolivia_discrete)
+        tail(df_table_4.5.Bolivia_discrete)
+      }
+      # BOOM `96 - `01
+      if(T){
+        df_table_4.5.Bolivia_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Bolivia") %>%
+          filter(year>=1996 & year<=2001) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Bolivia_discrete)
+        tail(df_table_4.5.Bolivia_discrete)
+      }
+    }
+# 3. Bolivia Visualization
+require(mgcv)
+    # Bolivia (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+    if(T){
+      Bolivia_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Bolivia, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Bolivia General Labor"); Bolivia_general_plot1
+      
+      Bolivia_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Bolivia, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = FALSE) + 
+        geom_point() +
+        ggtitle("Bolivia General Oil"); Bolivia_general_plot2
+      
+      gridExtra::grid.arrange(Bolivia_general_plot1, Bolivia_general_plot2)}
+    # Bolivia (General) Plot
+    if(T){
+      Bolivia_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Bolivia_general, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Bolivia General Labor"); Bolivia_general_plot1
+      
+      Bolivia_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Bolivia_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+        geom_point() +
+        ggtitle("Bolivia General Oil"); Bolivia_general_plot2
+      
+      gridExtra::grid.arrange(Bolivia_general_plot1, Bolivia_general_plot2)
+      
+    } # This originates at # 3. Bolivia (General) Plot
+    # Bolivia (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+    if(T){
+      Bolivia_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Bolivia_discrete, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Bolivia Discrete Labor"); Bolivia_discrete_plot1
+      
+      Bolivia_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Bolivia_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(method = "lm",se = FALSE) + 
+        geom_point() +
+        ggtitle("Bolivia Discrete Oil"); Bolivia_discrete_plot2
+      
+      gridExtra::grid.arrange(Bolivia_discrete_plot1, Bolivia_discrete_plot2)
+    } # This originates at # Bolivia (Discrete) Plot No Coefficients switch
+  } # Originates at Bolivia ON / OFF Switch
   
+#######################
+###       Cuba      ###
+#######################
+if(T){ # Cuba ON / OFF Switch
+# 1. Cuba Dataframe (General) (Petrobras joint)
+  if(T){
+      df_table_4.5.Cuba_general <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                      FDlogGDP_cap2000_supSQ_1,FDage_1,
+                      FDoil_gas_valuePOPred_1,latin) %>%
+        filter(cty=="Cuba") %>%
+        filter(!is.na(year)) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+    }
+# 2. Cuba (discrete) Dataframe
+  if(T){
+  # Cuba (discrete) Dataframe from 1985 - 1995
+  # Look at 
+  # BUST `85 - `90 |
+  if(T){
+        df_table_4.5.Cuba_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Cuba") %>%
+          filter(year>=1985 & year<=1990) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Cuba_discrete)
+        tail(df_table_4.5.Cuba_discrete)
+      }
+  # BOOM `96 - `01
+  if(T){
+        df_table_4.5.Cuba_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Cuba") %>%
+          filter(year>=1996 & year<=2001) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Cuba_discrete)
+        tail(df_table_4.5.Cuba_discrete)
+      }
+    }
+# 3. Cuba Visualization
+require(mgcv)
+# Cuba (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Cuba_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Cuba, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Cuba General Labor"); Cuba_general_plot1
+      
+      Cuba_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Cuba, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = FALSE) + 
+        geom_point() +
+        ggtitle("Cuba General Oil"); Cuba_general_plot2
+      
+      gridExtra::grid.arrange(Cuba_general_plot1, Cuba_general_plot2)}
+  # Cuba (General) Plot
+  if(T){
+      Cuba_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Cuba_general, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Cuba General Labor"); Cuba_general_plot1
+      
+      Cuba_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Cuba_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+        geom_point() +
+        ggtitle("Cuba General Oil"); Cuba_general_plot2
+      
+      gridExtra::grid.arrange(Cuba_general_plot1, Cuba_general_plot2)
+      
+    } # This originates at # 3. Cuba (General) Plot
+  # Cuba (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Cuba_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Cuba_discrete, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Cuba Discrete Labor"); Cuba_discrete_plot1
+      
+      Cuba_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Cuba_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(method = "lm",se = FALSE) + 
+        geom_point() +
+        ggtitle("Cuba Discrete Oil"); Cuba_discrete_plot2
+      
+      gridExtra::grid.arrange(Cuba_discrete_plot1, Cuba_discrete_plot2)
+    } # This originates at # Cuba (Discrete) Plot No Coefficients switch
+  } # Originates at Cuba ON / OFF Switch
+  
+###########################
+###   Trinidad (LT)     ###
+###########################
+if(T){ # Trinidad ON / OFF Switch
+# 1. Trinidad Dataframe (General) (Petrobras joint)
+  if(T){
+      df_table_4.5.Trinidad_general <- rossdata01 %>%
+        dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,
+                      FDlogGDP_cap2000_supSQ_1,FDage_1,
+                      FDoil_gas_valuePOPred_1,latin) %>%
+        filter(cty=="Trinidad") %>%
+        filter(!is.na(year)) %>%
+        filter(!is.na(FDlaborfemale)) %>%
+        filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+        filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+        filter(!is.na(FDage_1)) %>%
+        filter(!is.na(FDoil_gas_valuePOPred_1))
+    }
+# 2. Trinidad (discrete) Dataframe
+  if(T){
+      # Trinidad (discrete) Dataframe from 1985 - 1995
+      # Look at 
+      # BUST `85 - `90 |
+      if(T){
+        df_table_4.5.Trinidad_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Trinidad") %>%
+          filter(year>=1985 & year<=1990) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Trinidad_discrete)
+        tail(df_table_4.5.Trinidad_discrete)
+      }
+      # BOOM `96 - `01
+      if(T){
+        df_table_4.5.Trinidad_discrete <- rossdata01 %>%
+          dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
+          filter(latin==1) %>%
+          filter(cty=="Trinidad") %>%
+          filter(year>=1996 & year<=2001) %>%
+          filter(!is.na(FDlaborfemale)) %>%
+          filter(!is.na(FDlogGDP_cap2000_sup_1)) %>%
+          filter(!is.na(FDlogGDP_cap2000_supSQ_1)) %>%
+          filter(!is.na(FDage_1)) %>%
+          filter(!is.na(FDoil_gas_valuePOPred_1))
+        head(df_table_4.5.Trinidad_discrete)
+        tail(df_table_4.5.Trinidad_discrete)
+      }
+    }
+# 3. Trinidad Visualization
+require(mgcv)
+# Trinidad (General) no coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Trinidad_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Trinidad, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Trinidad General Labor"); Trinidad_general_plot1
+      
+      Trinidad_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Trinidad, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = FALSE) + 
+        geom_point() +
+        ggtitle("Trinidad General Oil"); Trinidad_general_plot2
+      
+      gridExtra::grid.arrange(Trinidad_general_plot1, Trinidad_general_plot2)}
+  # Trinidad (General) Plot
+  if(T){
+      Trinidad_general_plot1 <- ggplot2::ggplot(data = df_table_4.5.Trinidad_general, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Trinidad General Labor"); Trinidad_general_plot1
+      
+      Trinidad_general_plot2 <- ggplot2::ggplot(data = df_table_4.5.Trinidad_general, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(se = F,method = "lm",formula = y ~ poly(x,10),size = 1) + 
+        geom_point() +
+        ggtitle("Trinidad General Oil"); Trinidad_general_plot2
+      
+      gridExtra::grid.arrange(Trinidad_general_plot1, Trinidad_general_plot2)
+      
+    } # This originates at # 3. Trinidad (General) Plot
+  # Trinidad (Discrete) Plot No Coefficients Switch - USE THIS TO VIEW BOOMS AND BUSTS OVERALL
+  if(T){
+      Trinidad_discrete_plot1 <- ggplot2::ggplot(data = df_table_4.5.Trinidad_discrete, aes(x = year, y = FDlaborfemale)) + 
+        geom_line() + 
+        geom_smooth(se = FALSE) +
+        geom_point() +
+        ggtitle("Trinidad Discrete Labor"); Trinidad_discrete_plot1
+      
+      Trinidad_discrete_plot2 <- ggplot2::ggplot(data = df_table_4.5.Trinidad_discrete, aes(x = year, y = FDoil_gas_valuePOPred_1)) + 
+        geom_line() + 
+        stat_smooth(method = "lm",se = FALSE) + 
+        geom_point() +
+        ggtitle("Trinidad Discrete Oil"); Trinidad_discrete_plot2
+      
+      gridExtra::grid.arrange(Trinidad_discrete_plot1, Trinidad_discrete_plot2)
+    } # This originates at # Trinidad (Discrete) Plot No Coefficients switch
+  } # Originates at Trinidad ON / OFF Switch
+  
+
 ################################################
 ######            White Board             ######
 ################################################ 
@@ -1081,7 +1479,7 @@ if(T){
 
 ## 8 Build Discrete Dataframe for Latin America - unneeded !!!!
 # Latin America (discrete) Dataframe from 1985 - 1995
-  if(T){
+  if(F){
     df_table_4.5.LA_discrete <- rossdata01 %>%
       dplyr::select(cty,year,FDlaborfemale,FDlogGDP_cap2000_sup_1,FDlogGDP_cap2000_supSQ_1,FDage_1,FDoil_gas_valuePOPred_1,latin) %>%
       filter(latin==1) %>%
@@ -1108,6 +1506,6 @@ if(T){
 # One thing to do is draw a bunch of graphs to see if they are moving the way they should.  Are the trends moving together
 # if oil goes up then labor force participation should diverge.
 
-# End Bracket to run entire script at one time
-}
-grid.arrange(Brazil_general_plot2,Venezuela_general_plot2,Mexico_general_plot2)
+
+}  # End Bracket to run entire script at one time
+
